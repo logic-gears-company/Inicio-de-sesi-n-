@@ -2,7 +2,7 @@ const express = require('express');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
-const { execFile } = require('child_process');
+const { execFile, execFileSync } = require('child_process');
 
 const app = express();
 const uploadDir = path.join(__dirname, 'uploads');
@@ -59,12 +59,34 @@ app.post('/convert', upload.single('file'), (req, res) => {
   const outputName = baseName + '.pdf';
   const outputPath = path.join(outputDir, outputName);
 
-  const cmd = 'libreoffice';
-  const args = ['--headless', '--convert-to', 'pdf', '--outdir', outputDir, inputPath];
+  // Buscar libreoffice en varias rutas posibles
+  const possiblePaths = ['libreoffice', 'soffice', '/usr/bin/libreoffice', '/usr/bin/soffice'];
+  let found = null;
+  for (const p of possiblePaths) {
+    try {
+      execFileSync('which', [p]);
+      found = p;
+      break;
+    } catch { continue; }
+  }
+  if (!found) {
+    fs.unlinkSync(inputPath);
+    return res.status(500).json({
+      error: 'LibreOffice no está instalado',
+      detail: 'Instálalo con: apt install -y libreoffice'
+    });
+  }
 
-  execFile(cmd, args, { timeout: 120000 }, (error, stdout, stderr) => {
+  const cmd = found;
+  const args = ['--headless', '--convert-to', 'pdf', '--outdir', outputDir, inputPath];
+  const env = { ...process.env, HOME: '/tmp', USERPROFILE: '/tmp' };
+
+  console.log(`Conviertiendo: ${inputPath} → ${outputDir}`);
+
+  execFile(cmd, args, { timeout: 120000, env }, (error, stdout, stderr) => {
     if (error) {
-      console.error('Conversión fallida:', error, stderr);
+      console.error('Conversión fallida:', error.message);
+      console.error('Stderr:', stderr);
       fs.unlinkSync(inputPath);
       return res.status(500).json({
         error: 'La conversión falló',
@@ -72,18 +94,19 @@ app.post('/convert', upload.single('file'), (req, res) => {
       });
     }
 
-    // El archivo resultante puede tener un nombre ligeramente distinto
-    const actualOutput = path.join(outputDir, outputName);
-    if (fs.existsSync(actualOutput)) {
+    // Buscar el PDF generado (puede tener un nombre ligeramente distinto)
+    const pdfFiles = fs.readdirSync(outputDir).filter(f => f.endsWith('.pdf'));
+    const targetPdf = pdfFiles.find(f => f.includes(baseName)) || pdfFiles[pdfFiles.length - 1];
+
+    if (targetPdf) {
       fs.unlinkSync(inputPath);
       return res.json({
         success: true,
-        fileName: outputName,
-        downloadUrl: `/pdfs/${encodeURIComponent(outputName)}`
+        fileName: targetPdf,
+        downloadUrl: `/pdfs/${encodeURIComponent(targetPdf)}`
       });
     }
 
-    // Si LibreOffice devolvió un nombre distinto (ej. extensión en minúscula)
     fs.unlinkSync(inputPath);
     return res.status(500).json({ error: 'El PDF no se generó correctamente' });
   });
