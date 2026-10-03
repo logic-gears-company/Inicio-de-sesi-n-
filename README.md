@@ -1,45 +1,88 @@
 # Proyecto Duvan – Conversor Web a PDF
 
-¡Hola! Soy **AXIS**, la inteligencia artificial de acompañamiento desarrollada por **AXIS Labs** dentro de **Logic Gears Company**. Este proyecto tiene como objetivo ofrecer una herramienta sencilla y accesible para convertir documentos a PDF a través de una aplicación web.
+¡Hola! Soy **AXIS**, la inteligencia artificial de acompañamiento desarrollada por **AXIS Labs** dentro de **Logic Gears Company**. Este proyecto es una **aplicación web** que permite convertir documentos a PDF.
 
-## ¿Qué hace la aplicación?
+## ✨ Funcionalidades
 
-- **Interfaz web** disponible en `http://localhost:3000`.
-- Permite **subir** un archivo (docx, odt, pptx, txt, etc.).
-- En el backend se utiliza **LibreOffice** en modo headless para convertir el archivo al formato **PDF**.
-- El PDF resultante se devuelve al usuario para su descarga.
+- Interfaz web moderna (drag & drop + selector de archivo)
+- Sube documentos: `docx`, `odt`, `txt`, `rtf`, `pptx`, `xlsx`, `html`, `pdf`
+- Backend Node.js + Express que convierte usando **LibreOffice** (headless)
+- Descarga directa del PDF generado
+- Limpieza automática de archivos temporales (> 1h)
+- Límite de 50 MB por archivo
 
-## Tecnologías usadas
+## 🛠 Tecnologías
 
-- **Node.js** y **Express** para el servidor.
-- **Multer** para la gestión de uploads.
-- **LibreOffice** (debe estar instalado en el sistema) para la conversión real.
-- HTML/CSS básicos para la interfaz.
+| Capa | Tecnología |
+|------|-----------|
+| Frontend | HTML5, CSS3, Vanilla JS |
+| Backend | Node.js, Express |
+| Uploads | Multer |
+| Conversión | LibreOffice (headless) |
 
-## Cómo ejecutar la aplicación
+## 🚀 Ejecutar
 
-1. **Instalar dependencias**
-   ```bash
-   npm install
-   ```
-2. **Iniciar el servidor**
-   ```bash
-   npm start
-   ```
-3. Abrir el navegador y visitar **`http://localhost:3000`**.
-4. Subir el archivo que deseas convertir y, tras procesarse, recibirás el PDF.
+### Requisitos previos
+```bash
+# En Ubuntu / Proot-Distro
+apt update
+apt install -y libreoffice
 
-## Estructura del proyecto
+# Verifica que LibreOffice funciona
+libreoffice --version
+```
+
+> ⚠️ Si no tienes Node.js instalado: `apt install -y nodejs npm`
+
+### Arranque
+```bash
+git clone https://github.com/logic-gears-company/Inicio-de-sesi-n-.git
+cd Inicio-de-sesi-n-.
+npm install
+npm start
+```
+
+Abre el navegador y visita: **http://localhost:3000**
+
+## 📱 En Termux / Proot-Distro
+
+```bash
+# Dentro de Proot-Distro (Ubuntu)
+apt update
+apt install -y libreoffice nodejs npm git
+
+git clone https://github.com/logic-gears-company/Inicio-de-sesi-n-.git
+cd Inicio-de-sesi-n-.
+npm install
+npm start
+```
+
+Para exponerlo públicamente desde tu teléfono:
+```bash
+apt install -y ngrok
+ngrok config add-authtoken TU_TOKEN
+ngrok http 3000
+```
+
+## 📁 Estructura
 
 ```
 Proyecto-Duvan/
 ├─ public/
 │  └─ index.html        # Interfaz de usuario
-├─ server.js             # Backend de Express
-├─ package.json          # Definición del proyecto y scripts
-└─ README.md             # Este archivo
+├─ uploads/             # Archivos temporales (creado automáticamente)
+├─ pdfs/                # PDFs generados (creado automáticamente)
+├─ server.js            # Backend Express
+├─ package.json
+└─ README.md
 ```
+
+## 🔧 Variables de entorno
+
+| Variable | Por defecto | Descripción |
+|----------|-------------|-------------|
+| `PORT`   | `3000`      | Puerto del servidor |
 
 ---
 
-**AXIS** está aquí para acompañarte y facilitar tus tareas digitales. ¡Disfruta de la conversión!
+**AXIS** está aquí para acompañarte. ¡Disfruta de la conversión! 🚀

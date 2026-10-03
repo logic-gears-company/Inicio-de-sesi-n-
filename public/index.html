@@ -2,57 +2,185 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Duvan – Conversor a PDF</title>
   <style>
-    body { font-family: Arial, sans-serif; background: #f0f2f5; margin: 0; padding: 0; }
-    header { background: #0066cc; color: white; padding: 20px; text-align: center; }
-    main { max-width: 600px; margin: 40px auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+    :root {
+      --primary: #0066cc;
+      --primary-dark: #0056b3;
+      --bg: #f0f2f5;
+      --card: #ffffff;
+      --text: #333;
+      --error: #d9534f;
+      --success: #28a745;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+      background: var(--bg);
+      margin: 0;
+      padding: 0;
+      color: var(--text);
+    }
+
+    header {
+      background: var(--primary);
+      color: white;
+      padding: 24px 16px;
+      text-align: center;
+    }
+
+    header h1 { margin: 0 0 8px; font-size: 1.6rem; }
+    header p { margin: 0; opacity: 0.9; }
+
+    main {
+      max-width: 560px;
+      margin: 32px auto;
+      background: var(--card);
+      padding: 28px 24px;
+      border-radius: 12px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    }
+
     .upload-box { text-align: center; margin: 20px 0; }
-    input[type="file"] { margin: 10px 0; }
-    button { background: #0066cc; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 16px; }
-    button:hover { background: #0056b3; }
+
+    .drop-zone {
+      border: 2px dashed #b0bec5;
+      border-radius: 10px;
+      padding: 28px 16px;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+    }
+    .drop-zone:hover, .drop-zone.dragover {
+      border-color: var(--primary);
+      background: #f5f9ff;
+    }
+    .drop-zone input { display: none; }
+    .drop-zone p { margin: 8px 0; }
+    .file-name {
+      font-weight: bold;
+      color: var(--primary);
+      word-break: break-all;
+    }
+
+    button {
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 16px;
+      margin-top: 16px;
+      width: 100%;
+      transition: background 0.2s;
+    }
+    button:hover:not(:disabled) { background: var(--primary-dark); }
+    button:disabled { background: #9e9e9e; cursor: not-allowed; }
+
     .result { margin-top: 20px; text-align: center; }
-    .result a { color: #0066cc; text-decoration: underline; font-weight: bold; }
-    .error { color: red; text-align: center; margin-top: 10px; }
+    .result a {
+      display: inline-block;
+      color: var(--success);
+      text-decoration: none;
+      font-weight: bold;
+      padding: 10px 18px;
+      border: 2px solid var(--success);
+      border-radius: 6px;
+      margin-top: 10px;
+    }
+
+    .error { color: var(--error); text-align: center; margin-top: 12px; }
+    .success-msg { color: var(--success); text-align: center; margin-top: 12px; }
+
+    .spinner {
+      border: 3px solid #e0e0e0;
+      border-top: 3px solid var(--primary);
+      border-radius: 50%;
+      width: 32px;
+      height: 32px;
+      animation: spin 1s linear infinite;
+      margin: 16px auto;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    footer {
+      text-align: center;
+      padding: 16px;
+      color: #888;
+      font-size: 0.85rem;
+    }
   </style>
 </head>
 <body>
   <header>
-    <h1>Duvan – Conversor a PDF</h1>
-    <p>Sube un archivo y obtén su versión en PDF</p>
+    <h1>📄 Duvan</h1>
+    <p>Convierte tus documentos a PDF en segundos</p>
   </header>
 
   <main>
     <div class="upload-box">
-      <label for="fileUpload">Selecciona un archivo:</label>
-      <br />
-      <input type="file" id="fileUpload" accept=".docx,.doc,.odt,.txt,.pptx,.ppt" />
-      <br />
-      <button id="convertBtn">Convertir a PDF</button>
+      <label class="drop-zone" for="fileUpload">
+        <p>📂 Arrastra tu archivo aquí o haz clic para seleccionarlo</p>
+        <p style="font-size:0.85rem; color:#888;">Formatos: docx, odt, txt, rtf, pptx, xlsx, html</p>
+        <div class="file-name" id="fileName"></div>
+        <input type="file" id="fileUpload" accept=".docx,.doc,.odt,.txt,.rtf,.pptx,.ppt,.xlsx,.xls,.html,.pdf" />
+      </label>
+
+      <button id="convertBtn" disabled>Convertir a PDF</button>
     </div>
 
     <div id="status"></div>
-
     <div id="result" class="result"></div>
   </main>
+
+  <footer>
+    Proyecto Duvan · Developed with ❤️ by <strong>AXIS</strong>
+  </footer>
 
   <script>
     const fileInput = document.getElementById('fileUpload');
     const convertBtn = document.getElementById('convertBtn');
     const statusDiv = document.getElementById('status');
     const resultDiv = document.getElementById('result');
+    const fileNameDiv = document.getElementById('fileName');
+    const dropZone = document.querySelector('.drop-zone');
 
+    // Habilitar botón cuando hay archivo
+    fileInput.addEventListener('change', () => {
+      const file = fileInput.files[0];
+      fileNameDiv.textContent = file ? file.name : '';
+      convertBtn.disabled = !file;
+    });
+
+    // Drag & Drop
+    dropZone.addEventListener('dragover', e => {
+      e.preventDefault();
+      dropZone.classList.add('dragover');
+    });
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+    dropZone.addEventListener('drop', e => {
+      e.preventDefault();
+      dropZone.classList.remove('dragover');
+      if (e.dataTransfer.files.length > 0) {
+        fileInput.files = e.dataTransfer.files;
+        fileNameDiv.textContent = e.dataTransfer.files[0].name;
+        convertBtn.disabled = false;
+      }
+    });
+
+    // Conversión
     convertBtn.addEventListener('click', async () => {
       const file = fileInput.files[0];
-      if (!file) {
-        statusDiv.innerHTML = '<p class="error">Por favor selecciona un archivo.</p>';
-        return;
-      }
+      if (!file) return;
 
       const formData = new FormData();
       formData.append('file', file);
 
-      statusDiv.innerHTML = '<p>Convirtiendo... espera un momento.</p>';
+      convertBtn.disabled = true;
+      statusDiv.innerHTML = '<div class="spinner"></div><p>Convirtiendo... esto puede tardar unos segundos.</p>';
       resultDiv.innerHTML = '';
 
       try {
@@ -60,16 +188,19 @@
         const data = await res.json();
 
         if (data.success) {
-          statusDiv.innerHTML = '<p>¡Conversión exitosa!</p>';
+          statusDiv.innerHTML = '<p class="success-msg">✅ ¡Conversión exitosa!</p>';
           resultDiv.innerHTML = `
-            <p>Descarga tu PDF:
-              <a href="${data.downloadUrl}" target="_blank">${data.fileName}</a>
-            </p>`;
+            <p>Tu PDF está listo:</p>
+            <a href="${data.downloadUrl}" target="_blank" download>⬇ ${data.fileName}</a>
+          `;
         } else {
-          statusDiv.innerHTML = `<p class="error">${data.error || 'Error desconocido'}</p>`;
+          statusDiv.innerHTML = `<p class="error">❌ ${data.error || 'Error desconocido'}</p>`;
+          if (data.detail) statusDiv.innerHTML += `<p style="font-size:0.85rem;">${data.detail}</p>`;
         }
       } catch (err) {
-        statusDiv.innerHTML = `<p class="error">Error al comunicar con el servidor: ${err.message}</p>`;
+        statusDiv.innerHTML = `<p class="error">❌ Error de conexión: ${err.message}</p>`;
+      } finally {
+        convertBtn.disabled = false;
       }
     });
   </script>
