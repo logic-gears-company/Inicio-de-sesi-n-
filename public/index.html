@@ -3,449 +3,185 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#111827" />
   <title>Duvan — Conversor a PDF</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- React & ReactDOM from CDN -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+
+  <!-- Babel for JSX transformation -->
+  <script src="https://unpkg.com/@babel/standalone@7/babel.min.js"></script>
+
   <style>
     :root {
-      --black: #0a0a0a;
-      --dark: #141414;
-      --card: #1c1c1c;
-      --card-hover: #222222;
+      --bg: #0a0a0a;
+      --card: #141414;
       --border: #2a2a2a;
-      --border-light: #3a3a3a;
       --text: #f5f5f5;
-      --text-muted: #9a9a9a;
-      --text-subtle: #6a6a6a;
+      --muted: #9a9a9a;
       --accent: #ffffff;
-      --accent-dim: #e0e0e0;
       --success: #88cc88;
       --error: #cc8888;
-      --radius: 16px;
-      --shadow: 0 8px 32px rgba(0,0,0,0.5);
-      --transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     }
-
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-
+    * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-      background: var(--black);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: var(--bg);
       color: var(--text);
       min-height: 100vh;
       display: flex;
       flex-direction: column;
-      -webkit-font-smoothing: antialiased;
-      -moz-osx-font-smoothing: grayscale;
-    }
-
-    /* ---------- HEADER ---------- */
-    header {
-      text-align: center;
-      padding: 64px 24px 48px;
-      position: relative;
-      overflow: hidden;
-    }
-
-    header::before {
-      content: '';
-      position: absolute;
-      top: -50%;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 600px;
-      height: 600px;
-      background: radial-gradient(circle, rgba(255,255,255,0.03) 0%, transparent 70%);
-      pointer-events: none;
-    }
-
-    .brand {
-      display: inline-flex;
-      align-items: center;
-      gap: 12px;
-      margin-bottom: 20px;
-    }
-
-    .brand-icon {
-      width: 56px;
-      height: 56px;
-      background: linear-gradient(135deg, #2a2a2a 0%, #3a3a3a 100%);
-      border-radius: 14px;
-      display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 28px;
-      border: 1px solid var(--border-light);
-      box-shadow: 0 4px 12px rgba(0,0,0,0.4);
     }
-
-    h1 {
-      font-size: clamp(2rem, 5vw, 3rem);
-      font-weight: 800;
-      letter-spacing: -0.03em;
-      background: linear-gradient(180deg, #ffffff 0%, #b0b0b0 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
-
-    .subtitle {
-      font-size: 1.1rem;
-      color: var(--text-muted);
-      font-weight: 400;
-      max-width: 400px;
-      margin: 12px auto 0;
-      line-height: 1.6;
-    }
-
-    /* ---------- MAIN ---------- */
-    main {
-      flex: 1;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 0 20px 60px;
-    }
-
+    .container { width: 100%; max-width: 520px; padding: 2rem; }
     .card {
-      width: 100%;
-      max-width: 520px;
       background: var(--card);
       border: 1px solid var(--border);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      overflow: hidden;
-    }
-
-    /* ---------- DROP ZONE ---------- */
-    .drop-zone {
-      position: relative;
-      padding: 48px 32px;
-      text-align: center;
-      cursor: pointer;
-      transition: var(--transition);
-      border-bottom: 1px solid var(--border);
-    }
-
-    .drop-zone:hover, .drop-zone.dragover {
-      background: var(--card-hover);
-    }
-
-    .drop-zone.dragover {
-      border-color: var(--accent);
-      box-shadow: inset 0 0 0 2px rgba(255,255,255,0.1);
-    }
-
-    .drop-icon {
-      width: 72px;
-      height: 72px;
-      margin: 0 auto 20px;
-      background: linear-gradient(135deg, #2a2a2a 0%, #383838 100%);
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 32px;
-      border: 1px solid var(--border-light);
-      transition: var(--transition);
-      box-shadow: 0 4px 16px rgba(0,0,0,0.3);
-    }
-
-    .drop-zone:hover .drop-icon,
-    .drop-zone.dragover .drop-icon {
-      transform: scale(1.08);
-      background: linear-gradient(135deg, #383838 0%, #484848 100%);
-    }
-
-    .drop-zone h2 {
-      font-size: 1.15rem;
-      font-weight: 600;
-      margin-bottom: 8px;
-    }
-
-    .drop-zone p {
-      font-size: 0.9rem;
-      color: var(--text-muted);
-    }
-
-    .file-name {
-      margin-top: 16px;
-      font-size: 0.95rem;
-      font-weight: 500;
-      color: var(--text);
-      padding: 8px 16px;
-      background: rgba(255,255,255,0.05);
-      border-radius: 8px;
-      display: inline-block;
-      max-width: 100%;
-      word-break: break-all;
-      border: 1px solid var(--border);
-    }
-
-    .formats {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-      justify-content: center;
-      margin-top: 20px;
-    }
-
-    .formats span {
-      font-size: 0.75rem;
-      padding: 4px 10px;
-      background: rgba(255,255,255,0.04);
-      border: 1px solid var(--border);
-      border-radius: 20px;
-      color: var(--text-subtle);
-      font-weight: 500;
-      letter-spacing: 0.02em;
-    }
-
-    /* ---------- BUTTON ---------- */
-    .btn {
+      border-radius: 16px;
+      box-shadow: 0 8px 32px rgba(0,0,0,.5);
+      padding: 2rem;
       width: 100%;
-      padding: 18px;
-      background: var(--accent);
-      color: var(--black);
-      border: none;
-      border-radius: 12px;
-      font-size: 1rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: var(--transition);
-      font-family: inherit;
-      letter-spacing: 0.01em;
     }
-
-    .btn:hover:not(:disabled) {
-      background: var(--accent-dim);
-      transform: translateY(-1px);
-      box-shadow: 0 4px 16px rgba(255,255,255,0.15);
-    }
-
-    .btn:active:not(:disabled) {
-      transform: translateY(0);
-    }
-
-    .btn:disabled {
-      background: #3a3a3a;
-      color: var(--text-subtle);
-      cursor: not-allowed;
-    }
-
-    .btn-wrap {
-      padding: 24px 32px;
-    }
-
-    /* ---------- STATUS / RESULT ---------- */
-    .status-area {
-      padding: 0 32px 32px;
-      text-align: center;
-      min-height: 40px;
-    }
-
-    .spinner {
-      width: 36px;
-      height: 36px;
-      border: 3px solid var(--border);
-      border-top-color: var(--accent);
-      border-radius: 50%;
-      animation: spin 0.8s linear infinite;
-      margin: 0 auto 16px;
-    }
-
+    .drop-zone { border: 2px dashed var(--border); border-radius: 12px; padding: 2rem; text-align: center; cursor: pointer; transition: background .2s; margin-bottom: 1rem; }
+    .drop-zone:hover, .drop-zone.dragover { background: var(--border); }
+    .drop-zone.dragover { border-color: var(--accent); }
+    .icon { width: 64px; height: 64px; background: var(--card); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem; font-size: 32px; }
+    h2 { font-size: 1.25rem; font-weight: 600; margin-bottom .5rem; }
+    p { font-size: .9rem; color: var(--muted); margin-bottom 1rem; }
+    .file-name { margin-top .5rem; font-size: .85rem; color: var(--text); }
+    .btn { width: 100%; padding .8rem 1rem; background: var(--accent); color: var(--black); border: none; border-radius: 12px; font-size: 1rem; font-weight: 600; cursor: pointer; margin-top .5rem; }
+    .btn:disabled { background: #3a3a3a; color: var(--muted); cursor: not-allowed; }
+    .status { margin-top 1rem; }
+    .spinner { width: 20px; height: 20px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin .8s linear infinite; margin: 0 auto 8px; }
     @keyframes spin { to { transform: rotate(360deg); } }
-
-    .status-text {
-      font-size: 0.95rem;
-      color: var(--text-muted);
-    }
-
-    .success-box {
-      background: rgba(136, 204, 136, 0.08);
-      border: 1px solid rgba(136, 204, 136, 0.25);
-      border-radius: 12px;
-      padding: 24px;
-      margin-top: 16px;
-    }
-
-    .success-box .check {
-      font-size: 40px;
-      margin-bottom: 12px;
-    }
-
-    .success-box h3 {
-      font-size: 1.1rem;
-      font-weight: 600;
-      margin-bottom: 8px;
-    }
-
-    .success-box p {
-      font-size: 0.9rem;
-      color: var(--text-muted);
-      margin-bottom: 16px;
-    }
-
-    .dl-btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 12px 28px;
-      background: var(--success);
-      color: var(--black);
-      border-radius: 10px;
-      font-size: 0.95rem;
-      font-weight: 600;
-      text-decoration: none;
-      transition: var(--transition);
-    }
-
-    .dl-btn:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 4px 12px rgba(136,204,136,0.3);
-    }
-
-    .error-box {
-      background: rgba(204, 136, 136, 0.08);
-      border: 1px solid rgba(204, 136, 136, 0.25);
-      border-radius: 12px;
-      padding: 20px;
-      margin-top: 16px;
-      font-size: 0.9rem;
-      color: var(--error);
-      line-height: 1.5;
-    }
-
-    /* ---------- FOOTER ---------- */
-    footer {
-      text-align: center;
-      padding: 24px;
-      color: var(--text-subtle);
-      font-size: 0.8rem;
-      border-top: 1px solid var(--border);
-    }
-
-    footer strong {
-      color: var(--text-muted);
-    }
-
-    /* ---------- ANIMATIONS ---------- */
-    .card, header, footer {
-      animation: fadeUp 0.5s ease-out both;
-    }
-
-    @keyframes fadeUp {
-      from { opacity: 0; transform: translateY(16px); }
-      to   { opacity: 1; transform: translateY(0); }
-    }
-
-    /* ---------- RESPONSIVE ---------- */
-    @media (max-width: 480px) {
-      header { padding: 40px 16px 32px; }
-      .drop-zone { padding: 32px 20px; }
-      .btn-wrap  { padding: 20px; }
-      .status-area { padding: 0 20px 24px; }
+    .success { background: rgba(136, 204, 136, .08); border: 1px solid rgba(136,204,136,.25); padding: 1rem; border-radius: 12px; text-align: center; margin-top .5rem; display: none; color: var(--success); }
+    .success.visible { display: block; }
+    .error { background: rgba(204, 136, 136, .08); border: 1px solid rgba(204,136,136,.25); padding: 1rem; border-radius: 12px; text-align: center; margin-top .5rem; display: none; color: var(--error); }
+    .error.visible { display: block; }
+    @media (prefers-color-scheme: light) {
+      :root { --bg: #f9f9f9; --card: #ffffff; --border: #e5e5e5; --text: #111; --muted: #666; }
     }
   </style>
 </head>
 <body>
+  <div class="container">
+    <div class="card" id="root"></div>
+  </div>
 
-  <header>
-    <div class="brand">
-      <div class="brand-icon">📄</div>
-      <h1>Duvan</h1>
-    </div>
-    <p class="subtitle">Convierte tus documentos a PDF<br>en segundos. Simple, rápido y seguro.</p>
-  </header>
+  <script type="text/babel">
+    const { useState, useEffect } = React;
 
-  <main>
-    <div class="card">
-      <div class="drop-zone" id="dropZone">
-        <div class="drop-icon">⬆</div>
-        <h2>Suelta tu archivo aquí</h2>
-        <p>o haz clic para explorar</p>
-        <div class="file-name" id="fileName" style="display:none"></div>
-        <div class="formats">
-          <span>.docx</span><span>.odt</span><span>.txt</span>
-          <span>.rtf</span><span>.pptx</span><span>.xlsx</span><span>.html</span>
+    function App() {
+      const [file, setFile] = useState(null);
+      const [converting, setConverting] = useState(false);
+      const [message, setMessage] = useState({ type: null, text: '' });
+
+      const handleFileChange = (e) => {
+        const f = e.target.files[0];
+        setFile(f);
+        if (f) {
+          setMessage({ type: null, text: '' });
+          document.getElementById('fileName').textContent = f.name;
+          document.getElementById('fileName').style.display = 'block';
+          document.getElementById('convertBtn').disabled = false;
+        }
+      };
+
+      const handleDrop = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const dt = e.dataTransfer;
+        if (dt && dt.files.length) {
+          handleFileChange({ target: { files: dt.files } });
+        }
+      };
+
+      const handleConvert = async () => {
+        if (!file) return;
+        setConverting(true);
+        setMessage({ type: null, text: '' });
+        const formData = new FormData();
+        formData.append('file', file);
+        const btn = document.getElementById('convertBtn');
+        btn.disabled = true;
+        const status = document.getElementById('statusArea');
+        status.innerHTML = '<div class="spinner"></div><p>Convirtiendo…</p>';
+
+        try {
+          const res = await fetch('/convert', { method: 'POST', body: formData });
+          const data = await res.json();
+          if (data.success) {
+            setMessage({ type: 'success', text: 'PDF listo para descargar' });
+            // Show download link after a short delay
+            setTimeout(() => {
+              const dlUrl = data.downloadUrl;
+              const a = document.createElement('a');
+              a.href = dlUrl;
+              a.target = '_blank';
+              a.download = data.fileName;
+              a.style.display = 'block';
+              a.style.marginTop = '.5rem';
+              a.textContent = `⬇ Descargar ${data.fileName}`;
+              status.appendChild(a);
+            }, 500);
+          } else {
+            setMessage({ type: 'error', text: data.error || 'Error desconocido' });
+            if (data.detail) {
+              const detailDiv = document.createElement('div');
+              detailDiv.style.marginTop = '.5rem';
+              detailDiv.style.fontSize = '.85rem';
+              detailDiv.textContent = data.detail;
+              status.appendChild(detailDiv);
+            }
+          }
+        } catch (err) {
+          setMessage({ type: 'error', text: 'Error de conexión: ' + err.message });
+        } finally {
+          setConverting(false);
+          document.getElementById('convertBtn').disabled = false;
+        }
+      };
+
+      useEffect(() => {
+        const dz = document.getElementById('dropZone');
+        dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('dragover'); });
+        dz.addEventListener('dragleave', () => dz.classList.remove('dragover'));
+        dz.addEventListener('drop', handleDrop);
+        dz.addEventListener('click', () => document.getElementById('fileUpload').click());
+
+        return () => {
+          dz.removeEventListener('dragover', null);
+          dz.removeEventListener('dragleave', null);
+          dz.removeEventListener('drop', null);
+          dz.removeEventListener('click', null);
+        };
+      }, []);
+
+      return (
+        <div>
+          <div className="drop-zone" id="dropZone">
+            <div className="icon">⬆</div>
+            <h2>Suelta tu archivo aquí</h2>
+            <p>o haz clic para explorar</p>
+            <input type="file" id="fileUpload" accept=".docx,.doc,.odt,.txt,.rtf,.pptx,.xlsx,.html,.pdf" style={{display: 'none'}} onChange={e => handleFileChange(e)} />
+            <div className="file-name" id="fileName" style={{display: 'none'}}></div>
+          </div>
+
+          <button className="btn" id="convertBtn" onClick={handleConvert} disabled>Convertir a PDF</button>
+
+          <div className="status" id="statusArea"></div>
+
+          {/* Message placeholders */}
+          {message.type === 'success' && <div className="success visible" role="alert"><p>{message.text}</p></div>}
+          {message.type === 'error' && <div className="error visible" role="alert"><p>{message.text}</p></div>}
         </div>
-        <input type="file" id="fileUpload" accept=".docx,.doc,.odt,.txt,.rtf,.pptx,.ppt,.xlsx,.xls,.html,.pdf" style="display:none" />
-      </div>
-
-      <div class="btn-wrap">
-        <button class="btn" id="convertBtn" disabled>Convertir a PDF</button>
-      </div>
-
-      <div class="status-area" id="statusArea"></div>
-    </div>
-  </main>
-
-  <footer>
-    Duvan &copy; 2026 &middot; Built by <strong>AXIS Labs</strong>
-  </footer>
-
-  <script>
-    const fileInput   = document.getElementById('fileUpload');
-    const convertBtn  = document.getElementById('convertBtn');
-    const statusArea  = document.getElementById('statusArea');
-    const fileNameDiv = document.getElementById('fileName');
-    const dropZone    = document.getElementById('dropZone');
-
-    function setFile(file) {
-      if (!file) return;
-      fileNameDiv.textContent = file.name;
-      fileNameDiv.style.display = 'inline-block';
-      convertBtn.disabled = false;
+      );
     }
 
-    fileInput.addEventListener('change', () => setFile(fileInput.files[0]));
-
-    // Drag & Drop
-    dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
-    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
-    dropZone.addEventListener('drop', e => {
-      e.preventDefault();
-      dropZone.classList.remove('dragover');
-      if (e.dataTransfer.files.length > 0) {
-        fileInput.files = e.dataTransfer.files;
-        setFile(e.dataTransfer.files[0]);
-      }
-    });
-    dropZone.addEventListener('click', () => fileInput.click());
-
-    // Convert
-    convertBtn.addEventListener('click', async () => {
-      const file = fileInput.files[0];
-      if (!file) return;
-
-      const formData = new FormData();
-      formData.append('file', file);
-
-      convertBtn.disabled = true;
-      statusArea.innerHTML = '<div class="spinner"></div><p class="status-text">Convirtiendo... esto puede tardar unos segundos.</p>';
-
-      try {
-        const res  = await fetch('/convert', { method: 'POST', body: formData });
-        const data = await res.json();
-
-        if (data.success) {
-          statusArea.innerHTML = `
-            <div class="success-box">
-              <div class="check">✅</div>
-              <h3>¡Conversión completada!</h3>
-              <p>Tu PDF está listo para descargar</p>
-              <a class="dl-btn" href="${data.downloadUrl}" target="_blank" download>⬇ Descargar ${data.fileName}</a>
-            </div>`;
-        } else {
-          statusArea.innerHTML = `<div class="error-box">❌ ${data.error || 'Error desconocido'}${data.detail ? '<br>' + data.detail : ''}</div>`;
-        }
-      } catch (err) {
-        statusArea.innerHTML = `<div class="error-box">❌ Error de conexión: ${err.message}</div>`;
-      } finally {
-        convertBtn.disabled = false;
-      }
-    });
+    // Render
+    ReactDOM.render(<App />, document.getElementById('root'));
   </script>
 </body>
 </html>
