@@ -21,7 +21,11 @@ setInterval(() => {
     fs.readdirSync(dir).forEach(file => {
       const filePath = path.join(dir, file);
       const stat = fs.statSync(filePath);
-      if (stat.mtimeMs < oneHourAgo) fs.unlinkSync(filePath);
+      if (stat.isDirectory() && stat.mtimeMs < oneHourAgo) {
+        fs.rmSync(filePath, { recursive: true, force: true });
+      } else if (stat.mtimeMs < oneHourAgo) {
+        fs.unlinkSync(filePath);
+      }
     });
   });
 }, 5 * 60 * 1000);
@@ -56,20 +60,27 @@ app.post('/convert', upload.single('file'), (req, res) => {
 
   const inputPath = req.file.path;
   const baseName = req.file.originalname.replace(/\.[^/.]+$/, '');
-  const outputName = baseName + '.pdf';
-  const outputPath = path.join(outputDir, outputName);
+
+  // Subdirectorio único por conversión: evita que LibreOffice salte la
+  // conversión si ya existe un PDF con el mismo nombre, y evita coger
+  // PDFs de conversiones anteriores.
+  const workDir = path.join(outputDir, 'conv-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8));
+  fs.mkdirSync(workDir, { recursive: true });
 
   // Buscar libreoffice en varias rutas posibles
   const possiblePaths = ['libreoffice', 'soffice', '/usr/bin/libreoffice', '/usr/bin/soffice'];
   let found = null;
   for (const p of possiblePaths) {
     try {
-      execFileSync('which', [p]);
-      found = p;
-      break;
+      const pathFound = execFileSync('which', [p], { encoding: 'utf8' }).trim();
+      if (pathFound) {
+        found = pathFound;
+        break;
+      }
     } catch { continue; }
   }
   if (!found) {
+    fs.rmSync(workDir, { recursive: true, force: true });
     fs.unlinkSync(inputPath);
     return res.status(500).json({
       error: 'LibreOffice no está instalado',
@@ -78,15 +89,16 @@ app.post('/convert', upload.single('file'), (req, res) => {
   }
 
   const cmd = found;
-  const args = ['--headless', '--convert-to', 'pdf', '--outdir', outputDir, inputPath];
+  const args = ['--headless', '--convert-to', 'pdf', '--outdir', workDir, inputPath];
   const env = { ...process.env, HOME: '/tmp', USERPROFILE: '/tmp' };
 
-  console.log(`Conviertiendo: ${inputPath} → ${outputDir}`);
+  console.log(`Convirtiendo: ${inputPath} → ${outputDir}`);
 
   execFile(cmd, args, { timeout: 120000, env }, (error, stdout, stderr) => {
     if (error) {
       console.error('Conversión fallida:', error.message);
       console.error('Stderr:', stderr);
+      fs.rmSync(workDir, { recursive: true, force: true });
       fs.unlinkSync(inputPath);
       return res.status(500).json({
         error: 'La conversión falló',
@@ -94,19 +106,24 @@ app.post('/convert', upload.single('file'), (req, res) => {
       });
     }
 
-    // Buscar el PDF generado (puede tener un nombre ligeramente distinto)
-    const pdfFiles = fs.readdirSync(outputDir).filter(f => f.endsWith('.pdf'));
-    const targetPdf = pdfFiles.find(f => f.includes(baseName)) || pdfFiles[pdfFiles.length - 1];
+    // Buscar el PDF generado en el subdirectorio único de esta conversión
+    const pdfFiles = fs.readdirSync(workDir).filter(f => f.endsWith('.pdf'));
+    const targetPdf = pdfFiles.find(f => f.includes(baseName)) || pdfFiles[0];
 
     if (targetPdf) {
+      // Copiar el PDF a outputDir con nombre único y limpiar el directorio de trabajo
+      const finalName = Date.now() + '-' + targetPdf.replace(/[^\w.\-]/g, '_');
+      fs.copyFileSync(path.join(workDir, targetPdf), path.join(outputDir, finalName));
+      fs.rmSync(workDir, { recursive: true, force: true });
       fs.unlinkSync(inputPath);
       return res.json({
         success: true,
-        fileName: targetPdf,
-        downloadUrl: `/pdfs/${encodeURIComponent(targetPdf)}`
+        fileName: finalName,
+        downloadUrl: `/pdfs/${encodeURIComponent(finalName)}`
       });
     }
 
+    fs.rmSync(workDir, { recursive: true, force: true });
     fs.unlinkSync(inputPath);
     return res.status(500).json({ error: 'El PDF no se generó correctamente' });
   });
